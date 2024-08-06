@@ -110,4 +110,15 @@ cdef class Board():
         return (False, 0)
 
     def __str__(self):
-        return str(np.asarray(self.pieces))
+        string_board = "0123456\n"
+        for row in self.pieces:
+            for j in row:
+                if j == 0:
+                    string_board += "."
+                elif j == -1:
+                    string_board += "O"
+                elif j == 1:
+                    string_board += "X"
+            string_board += "\n"
+        return string_board
+        # return str(np.asarray(self.pieces))
