@@ -91,7 +91,7 @@ class NNPlayer(BasePlayer):
             print(probs)
             assert valids[choice] > 0
 
-        return choice
+        return choice.item()
 
     def process(self, *args, **kwargs):
         return self.nn.process(*args, **kwargs)
