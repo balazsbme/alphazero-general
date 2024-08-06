@@ -17,7 +17,7 @@ from alphazero.utils import dotdict
 DTYPE = np.float32
 ctypedef np.float32_t DTYPE_t
 
-NOISE_ALPHA_RATIO = 10.83
+NOISE_ALPHA_RATIO = 50.83
 _DRAW_VALUE = 0.5
 
 np.seterr(all='raise')
