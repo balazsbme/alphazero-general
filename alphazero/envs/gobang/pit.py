@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     # nnet players
     nn1 = NNet(Game, args)
-    nn1.load_checkpoint('./checkpoint/' + args.run_name, 'iteration-0020.pkl')
+    nn1.load_checkpoint('./checkpoint/' + args.run_name, 'iteration-0101.pkl')
     #nn2 = NNet(Game, args)
     #nn2.load_checkpoint('./checkpoint/brandubh2', 'iteration-0112.pkl')
     #player1 = nn1.process

@@ -137,7 +137,13 @@ However, the model does have a strange tendency to disregard obvious opportuniti
 
 Iteration 48 of the model can be downloaded [here](https://drive.google.com/file/d/1rv9fiFQRUVBv-4PBkfmawtRm3wqAM67H/view?usp=sharing).
 
-### Gobang 5x5
+### Gobang 
 `envs/gobang`
 
-# TODO: tensorboard data, upload iteration 20. Disclaimer for testing. Approx 4 h, 55 iterations, show GPU graph, approx 4GB RAM
+#### 5x5
+
+TODO: tensorboard data, upload iteration 20. Disclaimer for testing. Approx 4 h, 55 iterations, show GPU graph, approx 4GB RAM
+
+#### 7x7
+
+TODO: tensorboard data, iteration 101. approx 12 hours, 106 iterations, show GPU graph, approx 6-7GB RAM

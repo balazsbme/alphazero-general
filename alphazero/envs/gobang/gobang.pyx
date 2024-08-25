@@ -22,7 +22,7 @@ DTYPE = np.uint8
 ctypedef np.uint8_t DTYPE_t
 
 cdef int NUM_PLAYERS = 2
-cdef int BOARD_SIZE = 5
+cdef int BOARD_SIZE = 7
 cdef int NUM_IN_ROW = 5
 cdef int MAX_MOVES = BOARD_SIZE ** 2
 
@@ -197,9 +197,9 @@ cpdef void display(Game gs, int action=-1):
         for x in range(n):
             piece = board[x, y]    # get the piece to print
             if piece == -1:
-                print('b ', end='')
+                print('O ', end='')
             elif piece == 1:
-                print('W ', end='')
+                print('X ', end='')
             else:
                 print('- ', end='')
         print('|')
