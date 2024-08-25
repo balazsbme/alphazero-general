@@ -10,11 +10,12 @@ from alphazero.GenericPlayers import RawMCTSPlayer
 
 args = get_args(
     run_name='gobang',
-    max_moves=225,
+    max_moves=25,
+    workers=8,
     cpuct=2,
     fpu_reduction=0.1,
     symmetricSamples=True,
-    numMCTSSims=250,
+    numMCTSSims=100,
     numFastSims=50,
     numWarmupSims=5,
     probFastSim=0.75,

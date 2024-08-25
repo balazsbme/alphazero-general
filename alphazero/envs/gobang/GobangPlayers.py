@@ -13,13 +13,16 @@ class HumanGobangPlayer(BasePlayer):
 
         while True:
             a = input('Enter a move: ')
-
-            x, y = [int(x) for x in a.split(' ')]
-            a = state._board.n * x + y if x != -1 else state._board.n ** 2
-            if valid[a]:
-                break
+            a_split = [int(x) for x in a.split(' ')]
+            if len(a_split) == 2:
+                x, y = a_split
+                a = state._board.n * x + y if x != -1 else state._board.n ** 2
+                if valid[a]:
+                    break
+                else:
+                    print('Invalid move entered.')
             else:
-                print('Invalid move entered.')
+                print('Unexpected move format. Expected: x y')
 
         return a
 

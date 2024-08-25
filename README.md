@@ -136,3 +136,8 @@ The tensorboard logs have been corrupted for the best trained instance, therefor
 However, the model does have a strange tendency to disregard obvious opportunities on occasion such as a victory in one move or blocking a defeat. Also, the game length seems to even out around 25 moves - despite the players' nearly even win rate - instead of increasing to the maximum as expected. This is being investigated, but it is either due to inappropriate hyperparameters, or a bug in the MCTS code regarding recent changes.
 
 Iteration 48 of the model can be downloaded [here](https://drive.google.com/file/d/1rv9fiFQRUVBv-4PBkfmawtRm3wqAM67H/view?usp=sharing).
+
+### Gobang 5x5
+`envs/gobang`
+
+# TODO: tensorboard data, upload iteration 20. Disclaimer for testing. Approx 4 h, 55 iterations, show GPU graph, approx 4GB RAM

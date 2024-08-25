@@ -12,8 +12,9 @@ use this script to play any two agents against each other, or play manually with
 any agent.
 """
 if __name__ == '__main__':
-    from alphazero.envs.gobang.GobangGame import GobangGame as Game, display
+    from alphazero.envs.gobang.gobang import Game, display
     from alphazero.envs.gobang.train import args
+    from alphazero.envs.gobang.GobangPlayers import HumanGobangPlayer
     import random
 
     batched_arena = False
@@ -26,14 +27,14 @@ if __name__ == '__main__':
 
     # nnet players
     nn1 = NNet(Game, args)
-    nn1.load_checkpoint('./checkpoint/' + args.run_name, 'iteration-0009.pkl')
+    nn1.load_checkpoint('./checkpoint/' + args.run_name, 'iteration-0020.pkl')
     #nn2 = NNet(Game, args)
     #nn2.load_checkpoint('./checkpoint/brandubh2', 'iteration-0112.pkl')
     #player1 = nn1.process
     #player2 = nn2.process
 
-    player1 = MCTSPlayer(Game, nn1, args=args, verbose=True)
-    player2 = MCTSPlayer(Game, nn1, args=args, verbose=True)
+    player1 = NNPlayer(nn1, args=args, verbose=True)
+    player2 = HumanGobangPlayer(Game, args=args, verbose=True)
     #player2 = RandomPlayer()
     #player2 = GreedyTaflPlayer()
     #player2 = RandomPlayer()
