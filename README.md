@@ -163,7 +163,7 @@ As a test execution:
 ![image](https://github.com/user-attachments/assets/1317ca30-02b7-4965-9249-ad0b7c49dde2)
 ![image](https://github.com/user-attachments/assets/588bf6f5-ca84-4ae5-8132-28f30f72cb41)
 
-In 20 iteration it reaches almost always draws, also against human player. This is due to the game in a 5x5 does not make that much sense. The trained net is available ![here](https://drive.google.com/file/d/1hK-jtB2EZX5kyUhKsslbLcLBb_eLq7Js/view?usp=sharing)
+In 20 iteration it reaches almost always draws, also against human player. This is due to the game in a 5x5 does not make that much sense. The trained net is available [here](https://drive.google.com/file/d/1hK-jtB2EZX5kyUhKsslbLcLBb_eLq7Js/view?usp=sharing)
 
 Resource specifications:
 CPU: AMD Ryzen 5 1600X
@@ -175,7 +175,7 @@ RAM usage: approx. 4GB
 ![image](https://github.com/user-attachments/assets/d9e77690-5022-4bc4-9664-1ea35b7995a4)
 ![image](https://github.com/user-attachments/assets/977549b6-4fe1-4069-b2cf-a725276cb96d)
 
-Also manages to draw the game almost every time against human player. The trained net is available ![here](https://drive.google.com/file/d/1hPEMllYERr7GRTvmLBPSSrsUz7smG4_P/view?usp=sharing).
+Also manages to draw the game almost every time against human player. The trained net is available [here](https://drive.google.com/file/d/1hPEMllYERr7GRTvmLBPSSrsUz7smG4_P/view?usp=sharing).
 
 Resource specifications:
 CPU: AMD Ryzen 5 1600X
