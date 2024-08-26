@@ -20,6 +20,23 @@ You may join the [Discord server](https://discord.gg/MVaHwGZpRC) if you wish to 
 9. **More Adjustable Parameters:** This implementation allows for the modification of numerous hyperparameters, allowing for substantial control over the training process. More on hyperparameters below where the usage of some are discussed.
 
 ## Getting Started
+
+### Setup environment
+
+#### Windows with WSL
+
+Following this guide: https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_local
+
+```bash
+wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
+sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
+wget https://developer.download.nvidia.com/compute/cuda/12.6.0/local_installers/cuda-repo-wsl-ubuntu-12-6-local_12.6.0-1_amd64.deb
+sudo dpkg -i cuda-repo-wsl-ubuntu-12-6-local_12.6.0-1_amd64.deb
+sudo cp /var/cuda-repo-wsl-ubuntu-12-6-local/cuda-*-keyring.gpg /usr/share/keyrings/
+sudo apt-get update
+sudo apt-get -y install cuda-toolkit-12-6
+```
+
 ### Install required packages
 Make sure you have Python 3 installed. Then run:
 
@@ -142,8 +159,25 @@ Iteration 48 of the model can be downloaded [here](https://drive.google.com/file
 
 #### 5x5
 
-TODO: tensorboard data, upload iteration 20. Disclaimer for testing. Approx 4 h, 55 iterations, show GPU graph, approx 4GB RAM
+As a test execution:
+![image](https://github.com/user-attachments/assets/1317ca30-02b7-4965-9249-ad0b7c49dde2)
+![image](https://github.com/user-attachments/assets/588bf6f5-ca84-4ae5-8132-28f30f72cb41)
+
+In 20 iteration it reaches almost always draws, also against human player. This is due to the game in a 5x5 does not make that much sense. The trained net is available ![here](https://drive.google.com/file/d/1hK-jtB2EZX5kyUhKsslbLcLBb_eLq7Js/view?usp=sharing)
+
+Resource specifications:
+CPU: AMD Ryzen 5 1600X
+GPU: NVIDIA GeForce 1070 Ti
+RAM usage: approx. 4GB
 
 #### 7x7
 
-TODO: tensorboard data, iteration 101. approx 12 hours, 106 iterations, show GPU graph, approx 6-7GB RAM
+![image](https://github.com/user-attachments/assets/d9e77690-5022-4bc4-9664-1ea35b7995a4)
+![image](https://github.com/user-attachments/assets/977549b6-4fe1-4069-b2cf-a725276cb96d)
+
+Also manages to draw the game almost every time against human player. The trained net is available ![here](https://drive.google.com/file/d/1hPEMllYERr7GRTvmLBPSSrsUz7smG4_P/view?usp=sharing).
+
+Resource specifications:
+CPU: AMD Ryzen 5 1600X
+GPU: NVIDIA GeForce 1070 Ti
+RAM usage: approx. 6-7GB

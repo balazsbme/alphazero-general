@@ -1,3 +1,4 @@
+.vscode
 alphazero/__pycache__
 alphazero/pytorch_classification/__pycache__
 alphazero/pytorch_classification/utils/__pycache__
@@ -11,3 +12,6 @@ fastafl/__pycache__
 checkpoint
 data
 runs
+alphazero/envs/__pycache__
+alphazero/envs/*/__pycache__
+alphazero/pytorch_classification
