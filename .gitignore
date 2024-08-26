@@ -15,3 +15,5 @@ runs
 alphazero/envs/__pycache__
 alphazero/envs/*/__pycache__
 alphazero/pytorch_classification
+profiler/*.csv
+profiler/*.png
