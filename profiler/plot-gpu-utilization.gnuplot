@@ -9,11 +9,11 @@ set format x "%H:%M:%S"
 set key autotitle columnhead # use the first line as title
 set ylabel "GPU utilization" # label for the Y axis
 set xlabel 'Time' # label for the X axis
-set xrange ["2024/08/25 10:58:42.545":"2024/08/25 11:00:42.545"] # <-- Take this from the file
+set xrange ["2024/09/03 00:28:38.742":"2024/09/03 00:34:07.145"] # <-- Take this from the file
 set xtics rotate
 
 set terminal pngcairo size 800,600 enhanced font 'Segoe UI,10' 
 # set terminal wxt size 800,600 enhanced font 'Segoe UI,10' persist
 set output "gpu.png"
 
-plot "gpu-7x7.csv" using 1:9 with lines, '' using 1:10 with lines
+plot "output/run_0/gpu.csv" using 1:2 with lines, '' using 1:3 with lines

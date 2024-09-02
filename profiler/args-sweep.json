@@ -1,0 +1,4 @@
+{
+    "process_batch_size": [512, 64],
+    "numMCTSSims": [1500, 100]
+}
