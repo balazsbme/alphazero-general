@@ -1,3 +1,4 @@
+import json
 import numpy, pyximport
 pyximport.install(setup_args={'include_dirs': numpy.get_include()})
 
@@ -9,7 +10,7 @@ from alphazero.GenericPlayers import RawMCTSPlayer
 
 
 args = get_args(
-    run_name='gobang2',
+    run_name='gobang3',
     max_moves=49,
     workers=8,
     cpuct=2,
@@ -21,7 +22,7 @@ args = get_args(
     probFastSim=0.75,
     #skipSelfPlayIters=1,
     train_on_past_data=False,
-    past_data_run_name='gobang2',
+    past_data_run_name='gobang3',
     numWarmupIters=1,
     baselineCompareFreq=3,
     pastCompareFreq=1,
@@ -45,8 +46,14 @@ args = get_args(
 )
 args.scheduler_args.milestones = [75, 100]
 
-
-if __name__ == "__main__":
+def launch_learn(args, args_update_path=None):
+    if args_update_path is not None:
+        with open(args_update_path, "r") as f:
+            args_update = json.load(f)
+            args = get_args(args, **args_update)
     nnet = nn(Game, args)
     c = Coach(Game, nnet, args)
     c.learn()
+
+if __name__ == "__main__":
+    launch_learn(args, "profiler/args.json")
