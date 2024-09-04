@@ -11,7 +11,7 @@ from alphazero.GenericPlayers import RawMCTSPlayer
 
 args = get_args(
     run_name='gobang3',
-    max_moves=49,
+    max_moves=81,
     workers=8,
     cpuct=2,
     fpu_reduction=0.1,

@@ -1,4 +1,5 @@
 {
-    "process_batch_size": [512, 64],
-    "numMCTSSims": [1500, 100]
+    "process_batch_size": [128, 512],
+    "arena_batch_size": [64, 256],
+    "numMCTSSims": [50, 100, 150, 200, 250, 300]
 }

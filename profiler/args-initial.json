@@ -84,5 +84,5 @@
     "policy_dense_layers": [
         2048
     ],
-    "max_moves": 49
+    "max_moves": 81
 }
