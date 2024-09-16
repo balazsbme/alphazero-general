@@ -40,8 +40,7 @@ class MinusPlusGame:
 
         # Bottom numbering (reversed as in the expected format)
         print("    " + "  ".join(str(i + 1) for i in range(self.board_size)))
-
-
+    
     def valid_moves(self, player):
         # Determine valid moves for the current player
         moves = []
@@ -59,6 +58,7 @@ class MinusPlusGame:
         # Return possible moves for a piece located at (x, y)
         piece = self.board[x, y]
         moves = []
+        last_row = self.board_size - 1 if player == 0 else 0
 
         # Forward move: no jumps allowed, no additions/subtractions
         if 0 <= x + direction < self.board_size and self.board[x + direction, y] == 0:
@@ -80,11 +80,11 @@ class MinusPlusGame:
                 if mid_piece * piece > 0 and target_piece == 0:  # Jump over same sign piece
                     moves.append((x, y, x + 2*dx, y + 2*dy, 'jump'))
 
-        # Diagonal forward attack or addition (same sign): add based on opponent or same piece
+        # Diagonal forward attack or addition (same sign), but NOT allowed if moving into the last row
         for dx, dy in [(direction, -1), (direction, 1)]:
             if 0 <= x + dx < self.board_size and 0 <= y + dy < self.board_size:
                 target_piece = self.board[x + dx, y + dy]
-                if target_piece * piece < 0:  # Opponent piece: addition attack
+                if target_piece * piece < 0 and x + dx != last_row:  # Opponent piece: addition attack, not in last row
                     new_value = piece + target_piece
                     if abs(new_value) <= 6:
                         moves.append((x, y, x + dx, y + dy, 'attack'))
@@ -112,8 +112,10 @@ class MinusPlusGame:
             # Jump over a same-sign piece, move to an empty square
             self.board[nx, ny] = piece
         elif move_type == 'attack':
-            # Opponent piece, perform addition (not subtraction)
+            # Opponent piece, perform addition
             result = piece + target
+            if result == 0:
+                print(f"Produced a 0 as a result of attack, TO BE HANDLED!")
             if abs(result) <= 6:
                 self.board[nx, ny] = result
                 # Scoring: attacker gets points
@@ -160,6 +162,8 @@ class MinusPlusGame:
             existing_piece = self.board[first_row, value - 1]
             if piece * existing_piece > 0 and abs(piece + existing_piece) <= 6:
                 self.board[first_row, value - 1] = piece + existing_piece
+        self.board[nx, ny] = 0
+        print(f"Returned to first row!")
 
     def is_game_over(self):
         # Game is over if no moves are left for either player, or max score is reached
@@ -177,8 +181,10 @@ class MinusPlusGame:
             return 0
         elif self.score[1] > self.score[0]:
             return 1
-        else:
-            return -1  # Tie
+        elif not any(self.valid_moves(p) for p in range(self.num_players)):
+            # Handle tie cases based on player moves
+            return -1 if self.score[0] == self.score[1] else 1 if self.score[1] > self.score[0] else 0
+        return -1  # Tie
 
 if __name__ == "__main__":
     game = MinusPlusGame()
