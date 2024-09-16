@@ -9,28 +9,38 @@ class MinusPlusGame:
         self.score = [0, 0]  # Player 0's score, Player 1's score
         self.turns = 0
         self.player_turn = 0  # 0 for positive player, 1 for negative player
-        self.last_move_type = None  # Track the last move type to prevent consecutive lateral moves
+        self.last_move_type = [None, None]  # Track the last move type for each player
         self.board = np.zeros((self.board_size, self.board_size), dtype=int)  # initialize empty board
         self._setup_board()
 
     def _setup_board(self):
-        # Set up the board according to the initial placement rules
-        values = [1, 2, 3, 4, 5, 6]
+        # Set up the board according to the new initial placement rules
+        values = [6, 5, 4, 3, 2, 1]
         
         # Player 0's positive pieces on rows 0 and 1
         self.board[0, :] = values
         self.board[1, :] = values[::-1]
         
         # Player 1's negative pieces on rows 4 and 5
-        self.board[4, :] = [-v for v in values[::-1]]
-        self.board[5, :] = [-v for v in values]
+        self.board[4, :] = [-v for v in values]
+        self.board[5, :] = [-v for v in values[::-1]]
 
     def print_board(self):
-        # Display the current state of the board
-        print("Current board:")
-        for row in self.board:
-            print(' '.join(f'{cell:+2d}' if cell != 0 else ' 0 ' if cell == -9 else '  ' for cell in row))  # 0 represents zero-value piece, empty fields as "  "
-        print()
+        """Print the board with a frame and the number indicators for rows."""
+        # Top numbering, now reversed to match the expected format
+        print("    " + "  ".join(str(self.board_size - i) for i in range(self.board_size)))
+
+        print("  ┌" + "───" * self.board_size + "─┐")  # Adjusted frame length
+
+        for i, row in enumerate(self.board):
+            row_str = " ".join(f"{x:+2d}" if x != 0 else "  " for x in row)  # Ensure empty fields are "  "
+            print(f"{i + 1} │ {row_str} │")  # Adjusted row numbering from 1 to 6
+
+        print("  └" + "───" * self.board_size + "─┘")  # Adjusted frame length
+
+        # Bottom numbering (reversed as in the expected format)
+        print("    " + "  ".join(str(i + 1) for i in range(self.board_size)))
+
 
     def valid_moves(self, player):
         # Determine valid moves for the current player
@@ -40,12 +50,12 @@ class MinusPlusGame:
             for y in range(self.board_size):
                 piece = self.board[x, y]
                 if player == 0 and piece > 0:  # Positive player pieces
-                    moves.extend(self._get_moves(x, y, direction))
+                    moves.extend(self._get_moves(x, y, direction, player))
                 elif player == 1 and piece < 0:  # Negative player pieces
-                    moves.extend(self._get_moves(x, y, direction))
+                    moves.extend(self._get_moves(x, y, direction, player))
         return moves
 
-    def _get_moves(self, x, y, direction):
+    def _get_moves(self, x, y, direction, player):
         # Return possible moves for a piece located at (x, y)
         piece = self.board[x, y]
         moves = []
@@ -54,12 +64,13 @@ class MinusPlusGame:
         if 0 <= x + direction < self.board_size and self.board[x + direction, y] == 0:
             moves.append((x, y, x + direction, y, 'forward'))
 
-        # Sideways moves: no jumps, whole width allowed
-        for dy in [-1, 1]:
-            new_y = y
-            while 0 <= new_y + dy < self.board_size and self.board[x, new_y + dy] == 0:
-                new_y += dy
-                moves.append((x, y, x, new_y, 'sideways'))
+        # Sideways moves: no jumps, whole width allowed, check for consecutive lateral move restriction
+        if self.last_move_type[player] != 'sideways':
+            for dy in [-1, 1]:
+                new_y = y
+                while 0 <= new_y + dy < self.board_size and self.board[x, new_y + dy] == 0:
+                    new_y += dy
+                    moves.append((x, y, x, new_y, 'sideways'))
 
         # Diagonal forward moves with same sign (jump over one piece of same sign)
         for dx, dy in [(direction, -1), (direction, 1)]:
@@ -69,15 +80,17 @@ class MinusPlusGame:
                 if mid_piece * piece > 0 and target_piece == 0:  # Jump over same sign piece
                     moves.append((x, y, x + 2*dx, y + 2*dy, 'jump'))
 
-        # Diagonal forward attack or addition (same sign): add/subtract based on opponent
+        # Diagonal forward attack or addition (same sign): add based on opponent or same piece
         for dx, dy in [(direction, -1), (direction, 1)]:
             if 0 <= x + dx < self.board_size and 0 <= y + dy < self.board_size:
                 target_piece = self.board[x + dx, y + dy]
-                if piece * target_piece < 0:  # Opponent piece: subtraction
-                    moves.append((x, y, x + dx, y + dy, 'attack'))
-                elif piece * target_piece > 0:  # Same sign piece: addition
+                if target_piece * piece < 0:  # Opponent piece: addition attack
                     new_value = piece + target_piece
                     if abs(new_value) <= 6:
+                        moves.append((x, y, x + dx, y + dy, 'attack'))
+                elif target_piece * piece > 0:  # Same sign piece: addition
+                    new_value = piece + target_piece
+                    if abs(new_value) <= 6:  # Only valid if result stays within the range
                         moves.append((x, y, x + dx, y + dy, 'addition'))
 
         return moves
@@ -87,8 +100,8 @@ class MinusPlusGame:
         piece = self.board[x, y]
         target = self.board[nx, ny]
 
-        # Check for move restrictions: prevent consecutive sideways moves
-        if move_type == 'sideways' and self.last_move_type == 'sideways':
+        # Check for move restrictions: prevent consecutive sideways moves for the same player
+        if move_type == 'sideways' and self.last_move_type[self.player_turn] == 'sideways':
             print("Cannot perform consecutive sideways moves.")
             return False
 
@@ -99,15 +112,15 @@ class MinusPlusGame:
             # Jump over a same-sign piece, move to an empty square
             self.board[nx, ny] = piece
         elif move_type == 'attack':
-            # Opponent piece, perform subtraction
-            result = piece - target
-            if result == 0:
-                # Replace both pieces with a zero-value piece
-                self.board[nx, ny] = -9  # Represent zero-value pieces with -9
-            else:
+            # Opponent piece, perform addition (not subtraction)
+            result = piece + target
+            if abs(result) <= 6:
                 self.board[nx, ny] = result
                 # Scoring: attacker gets points
                 self.score[self.player_turn] += min(abs(piece), abs(target))
+            else:
+                print(f"Move invalid: attack results in {result}, which is outside of the allowed range.")
+                return False
         elif move_type == 'addition':
             # Same-sign piece, perform addition
             result = piece + target
@@ -120,60 +133,57 @@ class MinusPlusGame:
         # Empty the original cell
         self.board[x, y] = 0
 
-        # Handle zero-value pieces (cannot be moved or jumped over)
-        if target == -9:
-            print("Zero-value pieces cannot be moved or jumped.")
-
         # Track the move type to enforce lateral move restriction
-        self.last_move_type = move_type
+        self.last_move_type[self.player_turn] = move_type
 
         # Check if the piece reached the last row
         if (self.player_turn == 0 and nx == self.board_size - 1) or (self.player_turn == 1 and nx == 0):
-            # Place the piece back in the first row
+            points = abs(piece)
+            self.score[self.player_turn] += points
             self._return_to_first_row(nx, ny, piece)
 
         # Switch to the next player's turn
-        self.player_turn = (self.player_turn + 1) % self.num_players
+        self.player_turn = (self.player_turn + 1) % 2
         self.turns += 1
+
         return True
 
     def _return_to_first_row(self, nx, ny, piece):
-        # Handle returning a piece to the first row after reaching the last row
-        mod_value = abs(piece)
-        if self.player_turn == 0:
-            row = 0
-        else:
-            row = self.board_size - 1
+        # Determine the corresponding column based on the value of the piece
+        value = abs(piece)
+        first_row = 0 if piece > 0 else self.board_size - 1
 
-        # Check if the first row's square is occupied
-        if self.board[row, mod_value - 1] == 0:
-            self.board[row, mod_value - 1] = piece
+        if self.board[first_row, value - 1] == 0:
+            self.board[first_row, value - 1] = piece
         else:
-            # Add values if possible
-            result = self.board[row, mod_value - 1] + piece
-            if abs(result) <= 6:
-                self.board[row, mod_value - 1] = result
-            else:
-                # Otherwise, remove the piece from the board
-                self.board[row, mod_value - 1] = 0
+            # Perform an addition if the piece in the first row is of the same sign
+            existing_piece = self.board[first_row, value - 1]
+            if piece * existing_piece > 0 and abs(piece + existing_piece) <= 6:
+                self.board[first_row, value - 1] = piece + existing_piece
 
     def is_game_over(self):
-        # The game ends when a player reaches a score of 24 or the max turns are reached
-        return self.turns >= self.max_turns or any(score >= 24 for score in self.score)
+        # Game is over if no moves are left for either player, or max score is reached
+        if any(score >= 24 for score in self.score):
+            return True
+        return self.turns >= self.max_turns or all(not self.valid_moves(p) for p in range(self.num_players))
 
     def winner(self):
+        # Determine the winner based on the score
         if self.score[0] >= 24:
-            return 0  # Positive player wins
+            return 0  # Positive player wins by score
         elif self.score[1] >= 24:
-            return 1  # Negative player wins
-        elif self.turns >= self.max_turns:
-            return 0 if self.score[0] > self.score[1] else 1 if self.score[1] > self.score[0] else -1  # -1 for tie
-        return None
+            return 1  # Negative player wins by score
+        elif self.score[0] > self.score[1]:
+            return 0
+        elif self.score[1] > self.score[0]:
+            return 1
+        else:
+            return -1  # Tie
 
-# Simulate a full game by selecting random valid moves
 if __name__ == "__main__":
     game = MinusPlusGame()
     game.print_board()
+
 
     while not game.is_game_over():
         # Get the current player's valid moves

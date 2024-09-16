@@ -80,5 +80,7 @@ value of each victory.
 If after 80 turns none of the above conditions end the game, the winner will be determined based on the highest current score at 
 the end of the 80th turn. In case the scores are equal the match is a draw.
 
+Example playthrough: https://www.youtube.com/watch?v=lEzYrD_6Alc
+
 The game is designed by 
 Alejandro González, aljndr.gpl@gmail.com
