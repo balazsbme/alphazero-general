@@ -3,6 +3,9 @@ import random
 
 from alphazero.Game import GameState
 
+NUMBER_OF_INITIAL_PIECES_PER_PLAYER = 12
+MAX_MOVES_PER_PIECE = 10
+
 class MinusPlusGame(GameState):
     def __init__(self):
         self.board_size = 6  # 6x6 grid
@@ -13,6 +16,7 @@ class MinusPlusGame(GameState):
         self.score = [0, 0]  # Player 0's score, Player 1's score
         self.last_move_type = [None, None]  # Track the last move type for each player
         self._setup_board()
+        self._valid_moves_cache = None  # Initialize the cache
 
     @staticmethod
     def observation_size():
@@ -30,12 +34,10 @@ class MinusPlusGame(GameState):
         """Return the maximum possible number of valid moves."""
         # Each piece can move in multiple directions:
         # - 1 forward move
-        # - 6 sideways moves (whole width of the board)
+        # - 5 sideways moves (whole width of the board)
         # - 2 diagonal forward moves (jump)
         # - 2 diagonal forward moves (attack/addition)
-        # With 12 pieces per player, the maximum number of moves would be:
-        # 12 * (1 + 6 + 2 + 2) = 12 * 11 = 132
-        return 132
+        return NUMBER_OF_INITIAL_PIECES_PER_PLAYER * MAX_MOVES_PER_PIECE
     
     def __eq__(self, other):
         """Check if two game states are equal."""
@@ -88,10 +90,7 @@ class MinusPlusGame(GameState):
         """Return the current player."""
         return self.player
 
-    def make_move(self, move):
-        """Make a move and return the new game state."""
-        self.play_action(move)
-        return self
+    # TODO: add symmetries implementation for 180 degree rotation + swap colors (if needed...)
 
     def print_board(self):
         """Print the board with a frame and the number indicators for rows."""
@@ -109,34 +108,58 @@ class MinusPlusGame(GameState):
         # Bottom numbering (reversed as in the expected format)
         print("    " + "  ".join(str(i + 1) for i in range(self.board_size)))
     
-    def valid_moves(self):
+    def get_valid_moves(self):
+        if self._valid_moves_cache is not None:
+            return self._valid_moves_cache
         # Determine valid moves for the current player
         moves = []
         for x in range(self.board_size):
             for y in range(self.board_size):
-                moves.extend(self._get_moves(x, y, self.player))
-        # TODO: Convert the moves to a numpy array with always fixed length to action size.
-        # return np.array(moves, dtype=np.uint8)
+                if self._board[x, y] < 0 and self.player == 1 or self._board[x, y] > 0 and self.player == 0:
+                    piece_moves = self._get_moves(x, y, self.player)
+                    assert len(piece_moves) == MAX_MOVES_PER_PIECE, f"Expected {MAX_MOVES_PER_PIECE} moves, but got {len(piece_moves)}"
+                    moves.extend(piece_moves)
+        # Count the pieces, if it is less than the initial number of pieces, extend with a full None list to the moves list
+        current_piece_count = np.count_nonzero(self._board < 0) if self.player == 1 else np.count_nonzero(self._board > 0)
+        if current_piece_count < NUMBER_OF_INITIAL_PIECES_PER_PLAYER:
+            additional_moves_needed = (NUMBER_OF_INITIAL_PIECES_PER_PLAYER - current_piece_count) * MAX_MOVES_PER_PIECE
+            moves.extend([None] * additional_moves_needed)
+        assert len(moves) == self.action_size(), f"Expected {self.action_size()} moves, but got {len(moves)}"
+        self._valid_moves_cache = moves
         return moves
+
+    def valid_moves(self):
+        moves = self.get_valid_moves()
+        # Convert the moves to a numpy array with always fixed length to action size.
+        return np.array([0 if move is None else 1 for move in moves], dtype=np.uint8)
 
     def _get_moves(self, x, y, player):
         # Return possible moves for a piece located at (x, y)
         piece = self._board[x, y]
-        moves = []
+        moves = [None] * MAX_MOVES_PER_PIECE
+        index = 0
         last_row = self.board_size - 1 if player == 0 else 0
         direction = 1 if self.player == 0 else -1  # Player 0 moves down, Player 1 moves up
 
         # Forward move: no jumps allowed, no additions/subtractions
         if 0 <= x + direction < self.board_size and self._board[x + direction, y] == 0:
-            moves.append((x, y, x + direction, y, 'forward'))
+            moves[index] = (x, y, x + direction, y, 'forward')
+        index += 1
 
         # Sideways moves: no jumps, whole width allowed, check for consecutive lateral move restriction
         if self.last_move_type[player] != 'sideways':
             for dy in [-1, 1]:
-                new_y = y
-                while 0 <= new_y + dy < self.board_size and self._board[x, new_y + dy] == 0:
+                first_block = False
+                new_y = y + dy
+                while 0 <= new_y < self.board_size:
+                    if self._board[x, new_y] == 0 and not first_block:
+                        moves[index] = (x, y, x, new_y, 'sideways')
+                    else:
+                        first_block = True
                     new_y += dy
-                    moves.append((x, y, x, new_y, 'sideways'))
+                    index += 1
+        else:
+            index += self.board_size - 1
 
         # Diagonal forward moves with same sign (jump over one piece of same sign)
         for dx, dy in [(direction, -1), (direction, 1)]:
@@ -144,7 +167,10 @@ class MinusPlusGame(GameState):
                 mid_piece = self._board[x + dx, y + dy]
                 target_piece = self._board[x + 2*dx, y + 2*dy]
                 if mid_piece * piece > 0 and target_piece == 0:  # Jump over same sign piece
-                    moves.append((x, y, x + 2*dx, y + 2*dy, 'jump'))
+                    moves[index] = (x, y, x + 2*dx, y + 2*dy, 'jump')
+                index += 1
+            else:
+                index += 1
 
         # Diagonal forward attack or addition (same sign), but NOT allowed if moving into the last row
         for dx, dy in [(direction, -1), (direction, 1)]:
@@ -153,15 +179,24 @@ class MinusPlusGame(GameState):
                 if target_piece * piece < 0 and x + dx != last_row:  # Opponent piece: addition attack, not in last row
                     new_value = piece + target_piece
                     if abs(new_value) <= 6:
-                        moves.append((x, y, x + dx, y + dy, 'attack'))
+                        moves[index] = (x, y, x + dx, y + dy, 'attack')
+                    index += 1
                 elif target_piece * piece > 0:  # Same sign piece: addition
                     new_value = piece + target_piece
                     if abs(new_value) <= 6:  # Only valid if result stays within the range
-                        moves.append((x, y, x + dx, y + dy, 'addition'))
+                        moves[index] = (x, y, x + dx, y + dy, 'addition')
+                    index += 1
+                else:
+                    index += 1
+            else:
+                index += 1
 
         return moves
 
-    def play_action(self, move):
+    def play_action(self, action):
+        self.play_move(self.get_valid_moves()[action])
+
+    def play_move(self, move):
         x, y, nx, ny, move_type = move
         piece = self._board[x, y]
         target = self._board[nx, ny]
@@ -169,7 +204,7 @@ class MinusPlusGame(GameState):
         # Check for move restrictions: prevent consecutive sideways moves for the same player
         if move_type == 'sideways' and self.last_move_type[self.player] == 'sideways':
             print("Cannot perform consecutive sideways moves.")
-            return False
+            return
 
         if move_type == 'forward' or move_type == 'sideways':
             # Forward and sideways moves are simple: no interaction, just move the piece
@@ -180,15 +215,15 @@ class MinusPlusGame(GameState):
         elif move_type == 'attack':
             # Opponent piece, perform addition
             result = piece + target
-            if result == 0:
-                print(f"Produced a 0 as a result of attack, TO BE HANDLED!")
+            # if result == 0:
+            #     print(f"Produced a 0 as a result of attack, TO BE HANDLED!")
             if abs(result) <= 6:
                 self._board[nx, ny] = result
                 # Scoring: attacker gets points
                 self.score[self.player] += min(abs(piece), abs(target))
             else:
                 print(f"Move invalid: attack results in {result}, which is outside of the allowed range.")
-                return False
+                return 
         elif move_type == 'addition':
             # Same-sign piece, perform addition
             result = piece + target
@@ -196,10 +231,11 @@ class MinusPlusGame(GameState):
                 self._board[nx, ny] = result
             else:
                 print(f"Move invalid: addition results in {result}, which is outside of the allowed range.")
-                return False
+                return 
 
         # Empty the original cell
         self._board[x, y] = 0
+        self._valid_moves_cache = None  # Reset the cache
 
         # Track the move type to enforce lateral move restriction
         self.last_move_type[self.player] = move_type
@@ -211,8 +247,6 @@ class MinusPlusGame(GameState):
             self._return_to_first_row(nx, ny, piece)
 
         self._update_turn()
-
-        return True
 
     def _return_to_first_row(self, nx, ny, piece):
         # Determine the corresponding column based on the value of the piece
@@ -227,13 +261,12 @@ class MinusPlusGame(GameState):
             if piece * existing_piece > 0 and abs(piece + existing_piece) <= 6:
                 self._board[first_row, value - 1] = piece + existing_piece
         self._board[nx, ny] = 0
-        print(f"Returned to first row!")
 
     def is_game_over(self):
         # Game is over if no moves are left for either player, or max score is reached
         if any(score >= 24 for score in self.score):
             return True
-        return self.turns >= self.max_turns or not self.valid_moves()
+        return self.turns >= self.max_turns or not self.get_valid_moves()
 
     def winner(self):
         # Determine the winner based on the score
@@ -245,7 +278,7 @@ class MinusPlusGame(GameState):
             return 0
         elif self.score[1] > self.score[0]:
             return 1
-        elif not self.valid_moves():
+        elif not self.get_valid_moves():
             # Handle tie cases based on player moves
             other_player = 1 if self.player == 0 else 0
             return -1 if self.score[self.player] >= self.score[other_player] else other_player
@@ -258,19 +291,19 @@ if __name__ == "__main__":
     while not game.is_game_over():
         # Get the current player's valid moves
         player = game.get_current_player()
-        moves = game.valid_moves()
+        moves = game.get_valid_moves()
 
         # Print the valid moves before making a move
-        print(f"Valid moves for Player {player}: {moves}")
+        print(f"Valid moves for Player {player}: {[move for move in moves if move is not None]}")
 
         if not moves:
             print(f"Player {player} has no valid moves. The game ends in a draw.")
             break
 
-        # Randomly select a move from available moves
-        move = random.choice(moves)
+        # Randomly select a move from available moves that is not None
+        move = random.choice([m for m in moves if m is not None])
         print(f"Selected move: {move}")
-        game.play_action(move)
+        game.play_move(move)
         game.print_board()
 
         print(f"Turn {game.turns}, Player {player} moved. Current Scores: {game.score}")
