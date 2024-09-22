@@ -12,7 +12,8 @@ args = get_args(
     numMCTSSims=20,
     numIters=1,
     process_batch_size=32,
-    gamesPerIteration=2)
+    gamesPerIteration=2,
+    symmetricSamples=False)
 
 if __name__ == "__main__":
     nnet = nn(MinusPlusGame, args)

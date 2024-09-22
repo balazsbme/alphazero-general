@@ -3,12 +3,13 @@ import random
 
 from alphazero.Game import GameState
 
+BOARD_SIZE = 6 # 6x6 grid
 NUMBER_OF_INITIAL_PIECES_PER_PLAYER = 12
 MAX_MOVES_PER_PIECE = 10
 
 class MinusPlusGame(GameState):
     def __init__(self):
-        self.board_size = 6  # 6x6 grid
+        self.board_size = BOARD_SIZE
         initial_board = np.zeros((self.board_size, self.board_size), dtype=int)  # initialize empty board
         super().__init__(initial_board)  # Call the parent constructor with the initial board
 
@@ -21,8 +22,7 @@ class MinusPlusGame(GameState):
     @staticmethod
     def observation_size():
         """Return the size of the observation space."""
-        board_size = 6  # Assuming board_size is always 6 for this game
-        return (1, board_size, board_size)
+        return (1, BOARD_SIZE, BOARD_SIZE)
 
     @staticmethod
     def num_players():
@@ -43,8 +43,9 @@ class MinusPlusGame(GameState):
         """Check if two game states are equal."""
         return np.array_equal(self._board, other.board) and self.score == other.score and self.turns == other.turns and self.player == other.player
 
-    def observation(self):
+    def observation(self) -> np.ndarray:
         """Return the current observation of the game."""
+        # TODO: add obsrevation also the current points, maybe the turn count (Should it return symmetries??!!)
         return self._board
 
     def win_state(self):
@@ -266,7 +267,8 @@ class MinusPlusGame(GameState):
         # Game is over if no moves are left for either player, or max score is reached
         if any(score >= 24 for score in self.score):
             return True
-        return self.turns >= self.max_turns or not self.get_valid_moves()
+        valid_moves = self.get_valid_moves()
+        return self.turns >= self.max_turns or all(move is None for move in valid_moves)
 
     def winner(self):
         # Determine the winner based on the score
@@ -278,7 +280,8 @@ class MinusPlusGame(GameState):
             return 0
         elif self.score[1] > self.score[0]:
             return 1
-        elif not self.get_valid_moves():
+        valid_moves = self.get_valid_moves()
+        if all(move is None for move in valid_moves):
             # Handle tie cases based on player moves
             other_player = 1 if self.player == 0 else 0
             return -1 if self.score[self.player] >= self.score[other_player] else other_player
