@@ -1,5 +1,5 @@
 {
-    "run_name": "gobang_sweep_",
+    "run_name": "gobang9x9_42GB_sweep_",
     "cuda": true,
     "workers": 11,
     "startIter": 0,
@@ -13,7 +13,7 @@
     "autoTrainSteps": true,
     "train_on_past_data": false,
     "past_data_chunk_size": 25,
-    "past_data_run_name": "gobang_sweep_",
+    "past_data_run_name": "gobang9x9_42GB_sweep_",
     "gamesPerIteration": 512,
     "minTrainHistoryWindow": 4,
     "maxTrainHistoryWindow": 20,

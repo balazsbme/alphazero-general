@@ -17,3 +17,4 @@ alphazero/envs/*/__pycache__
 alphazero/pytorch_classification
 profiler/*.csv
 profiler/*.png
+profiler/*.log
