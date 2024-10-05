@@ -14,14 +14,14 @@ from alphazero.Coach import get_args
 use this script to play any two agents against each other, or play manually with
 any agent.
 """
-if __name__ == '__main__':
+def main(**kwargs):
     from alphazero.envs.gobang.gobang import Game, display
     from alphazero.envs.gobang.train import args
-    from alphazero.envs.gobang.GobangPlayers import HumanGobangPlayer
+    from alphazero.envs.gobang.GobangPlayers import HumanGobangPlayer, UnixSocketGobangPlayer
     import random
 
     parser = argparse.ArgumentParser(description='Run the AlphaZero Gobang pit.')
-    parser.add_argument('--opponent_type', type=str, choices=['self', 'human'], default='self',
+    parser.add_argument('--opponent_type', type=str, choices=['self', 'human', 'socket'], default='self',
                         help='Type of player: "self" for neural network, "human" for human player')
     parser.add_argument('--checkpoint_folder', type=str, required=False,
                         help='Full path to the first checkpoint folder')
@@ -29,7 +29,15 @@ if __name__ == '__main__':
                         help='Filename of checkpoint')
     parser.add_argument('--args_path', type=str, required=False,
                     help='Path to the args.json file')
-    script_args = parser.parse_args()
+    # Convert kwargs to a list of arguments
+    if len(kwargs) > 0:
+        args_list = []
+        for key, value in kwargs.items():
+            args_list.append(f'--{key}')
+            args_list.append(str(value))
+        script_args = parser.parse_args(args_list)
+    else:
+        script_args = parser.parse_args()
 
     if script_args.args_path is not None:
         with open(script_args.args_path, "r") as f:
@@ -61,6 +69,8 @@ if __name__ == '__main__':
         player2 = NNPlayer(nn2, args=args, verbose=True)
     elif script_args.opponent_type == 'human':
         player2 = HumanGobangPlayer(Game, args=args, verbose=True)
+    elif script_args.opponent_type == 'socket':
+        player2 = UnixSocketGobangPlayer(Game, args=args, verbose=True, display=display)
 
     #player1 = nn1.process
     #player2 = nn2.process
@@ -84,3 +94,5 @@ if __name__ == '__main__':
     else:
         arena.play_game(verbose=True)
 
+if __name__ == '__main__':
+    main()
