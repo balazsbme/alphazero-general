@@ -94,9 +94,20 @@ class UnixSocketGobangPlayer(BasePlayer):
             conn, _ = self.server_socket.accept()  # Accept the client connection
             print("Connection accepted.")
             
-            valid = state.valid_moves()
             try:
                 while True:
+                    valid = state.valid_moves()
+
+                    # Capture the output of the display function
+                    old_stdout = sys.stdout
+                    new_stdout = io.StringIO()
+                    sys.stdout = new_stdout
+                    self.display(state)
+                    # Reset stdout
+                    sys.stdout = old_stdout
+                    board_string = new_stdout.getvalue()
+                    conn.sendall(board_string.encode('utf-8'))
+
                     # Receive move from the client
                     valid_action = None
                     move = self.receive_move(conn)
