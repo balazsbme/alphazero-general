@@ -107,6 +107,9 @@ class UnixSocketGobangPlayer(BasePlayer):
                     sys.stdout = old_stdout
                     board_string = new_stdout.getvalue()
                     conn.sendall(board_string.encode('utf-8'))
+                    print("Waiting for a connection, after sending initial state...")
+                    conn, _ = self.server_socket.accept()  # Accept the client connection
+                    print("Connection accepted.")
 
                     # Receive move from the client
                     valid_action = None
@@ -122,8 +125,10 @@ class UnixSocketGobangPlayer(BasePlayer):
                         else:
                             # TODO: how to send message back to client?
                             print('Invalid move entered.')
+                            break
                     else:
                         print('Unexpected move format. Expected: x,y')
+                        break
                     # board_string = self.display(state)
                     # conn.sendall(board_string.encode('utf-8'))
 
