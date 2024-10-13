@@ -107,7 +107,8 @@ class UnixSocketGobangPlayer(BasePlayer):
                     sys.stdout = old_stdout
                     board_string = new_stdout.getvalue()
                     conn.sendall(board_string.encode('utf-8'))
-                    print("Waiting for a connection, after sending initial state...")
+
+                    print("Waiting for a connection to receive the move...")
                     conn, _ = self.server_socket.accept()  # Accept the client connection
                     print("Connection accepted.")
 
@@ -132,18 +133,6 @@ class UnixSocketGobangPlayer(BasePlayer):
                     # board_string = self.display(state)
                     # conn.sendall(board_string.encode('utf-8'))
 
-                # Capture the output of the display function
-                old_stdout = sys.stdout
-                new_stdout = io.StringIO()
-                sys.stdout = new_stdout
-
-                self.display(state, valid_action)
-
-                # Reset stdout
-                sys.stdout = old_stdout
-
-                board_string = new_stdout.getvalue()
-                conn.sendall(board_string.encode('utf-8'))
                 conn.close()
                 return valid_action
             
