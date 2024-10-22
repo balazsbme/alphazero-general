@@ -1,3 +1,4 @@
+import json
 import socket
 import os
 from typing import Callable, Optional
@@ -59,6 +60,7 @@ class UnixSocketGobangPlayer(BasePlayer):
         """
         self.socket_path = "/tmp/gobang.sock"  # Unix socket path
         self.display = display
+        self.game_initialized = False
         self.setup_socket()
         super().__init__(game_cls, args, verbose)
 
@@ -77,6 +79,21 @@ class UnixSocketGobangPlayer(BasePlayer):
 
         print(f"Socket setup complete. Listening at {self.socket_path}")
 
+    def send_board_state(self, conn, state: GameState, message: str = None):
+        # Capture the output of the display function
+        old_stdout = sys.stdout
+        new_stdout = io.StringIO()
+        sys.stdout = new_stdout
+        self.display(state)
+        # Reset stdout
+        sys.stdout = old_stdout
+        board_string = new_stdout.getvalue()
+        response = {
+            "board": board_string,
+            "message": message
+        }
+        conn.sendall(json.dumps(response).encode('utf-8'))
+
     def receive_move(self, conn):
         """
         Receives a move from the client.
@@ -90,52 +107,42 @@ class UnixSocketGobangPlayer(BasePlayer):
         Main game loop to handle receiving moves and sending board states.
         """
         while True:
-            print("Waiting for a connection...")
-            conn, _ = self.server_socket.accept()  # Accept the client connection
-            print("Connection accepted.")
-            
             try:
+                if not self.game_initialized:
+                    print("Waiting for a connection...")
+                    conn, _ = self.server_socket.accept()  # Accept the client connection
+                    print("Initial connection accepted.")
+                    self.send_board_state(conn, state, "Initialized game.")
+                    self.game_initialized = True
+
                 while True:
-                    valid = state.valid_moves()
-
-                    # Capture the output of the display function
-                    old_stdout = sys.stdout
-                    new_stdout = io.StringIO()
-                    sys.stdout = new_stdout
-                    self.display(state)
-                    # Reset stdout
-                    sys.stdout = old_stdout
-                    board_string = new_stdout.getvalue()
-                    conn.sendall(board_string.encode('utf-8'))
-
-                    print("Waiting for a connection to receive the move...")
+                    print("Waiting for a connection to receive a move...")
                     conn, _ = self.server_socket.accept()  # Accept the client connection
                     print("Connection accepted.")
-
+                    valid = state.valid_moves()
                     # Receive move from the client
-                    valid_action = None
                     move = self.receive_move(conn)
                     print(f"Received move: {move}")
-                    move_split = [int(x) for x in move.split(',')]
+                    move_split = [int(x) for x in move.split('_')]
                     if len(move_split) == 2:
                         x, y = move_split
                         action = state._board.n * x + y if x != -1 else state._board.n ** 2
                         if valid[action]:
-                            valid_action = action
-                            break
+                            message='Move accepted.'
+                            print(message)
+                            self.send_board_state(conn, state, message)
+                            conn.close()
+                            return action
                         else:
-                            # TODO: how to send message back to client?
-                            print('Invalid move entered.')
+                            error='Invalid move entered.'
+                            print(error)
+                            self.send_board_state(conn, state, error)
                             break
                     else:
-                        print('Unexpected move format. Expected: x,y')
+                        error='Unexpected move format. Expected: x_y'
+                        print(error)
+                        self.send_board_state(conn, state, error)
                         break
-                    # board_string = self.display(state)
-                    # conn.sendall(board_string.encode('utf-8'))
-
-                conn.close()
-                return valid_action
-            
             except Exception as e:
                 print(f"Error: {e}")
                 traceback.print_exc()
