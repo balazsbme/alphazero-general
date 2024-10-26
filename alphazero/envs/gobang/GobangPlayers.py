@@ -82,7 +82,7 @@ class UnixSocketGobangPlayer(BasePlayer):
     def send_board_state(self, state: GameState, message: str = None):
         print("Waiting for a connection...")
         conn, _ = self.server_socket.accept()  # Accept the client connection
-        print("Initial connection accepted.")
+        print("Connection accepted.")
         # Capture the output of the display function
         old_stdout = sys.stdout
         new_stdout = io.StringIO()
@@ -95,6 +95,7 @@ class UnixSocketGobangPlayer(BasePlayer):
             "board": board_string,
             "message": message
         }
+        print(f"Sending board state with message: {message}")
         conn.sendall(json.dumps(response).encode('utf-8'))
 
     def receive_move(self):
@@ -116,8 +117,11 @@ class UnixSocketGobangPlayer(BasePlayer):
         while True:
             try:
                 if not self.game_initialized:
-                    self.send_board_state(state, "Initialized game.")
+                    message = "Initialized game."
                     self.game_initialized = True
+                else:
+                    message = "Your move."
+                self.send_board_state(state, message)
 
                 while True:
                     # Receive move from the client
@@ -131,7 +135,6 @@ class UnixSocketGobangPlayer(BasePlayer):
                         if valid[action]:
                             message='Move accepted.'
                             print(message)
-                            self.send_board_state(state, message)
                             return action
                         else:
                             error='Invalid move entered.'
