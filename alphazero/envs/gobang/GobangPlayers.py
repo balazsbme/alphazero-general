@@ -79,7 +79,10 @@ class UnixSocketGobangPlayer(BasePlayer):
 
         print(f"Socket setup complete. Listening at {self.socket_path}")
 
-    def send_board_state(self, conn, state: GameState, message: str = None):
+    def send_board_state(self, state: GameState, message: str = None):
+        print("Waiting for a connection...")
+        conn, _ = self.server_socket.accept()  # Accept the client connection
+        print("Initial connection accepted.")
         # Capture the output of the display function
         old_stdout = sys.stdout
         new_stdout = io.StringIO()
@@ -94,11 +97,15 @@ class UnixSocketGobangPlayer(BasePlayer):
         }
         conn.sendall(json.dumps(response).encode('utf-8'))
 
-    def receive_move(self, conn):
+    def receive_move(self):
         """
         Receives a move from the client.
         :param conn: The connection object from the client.
         """
+        
+        print("Waiting for a connection to receive a move...")
+        conn, _ = self.server_socket.accept()  # Accept the client connection
+        print("Connection accepted.")
         data = conn.recv(1024).decode('utf-8')  # Receive the move as a string
         return data
 
@@ -109,42 +116,33 @@ class UnixSocketGobangPlayer(BasePlayer):
         while True:
             try:
                 if not self.game_initialized:
-                    print("Waiting for a connection...")
-                    conn, _ = self.server_socket.accept()  # Accept the client connection
-                    print("Initial connection accepted.")
-                    self.send_board_state(conn, state, "Initialized game.")
+                    self.send_board_state(state, "Initialized game.")
                     self.game_initialized = True
 
                 while True:
-                    print("Waiting for a connection to receive a move...")
-                    conn, _ = self.server_socket.accept()  # Accept the client connection
-                    print("Connection accepted.")
-                    valid = state.valid_moves()
                     # Receive move from the client
-                    move = self.receive_move(conn)
+                    move = self.receive_move()
                     print(f"Received move: {move}")
                     move_split = [int(x) for x in move.split('_')]
+                    valid = state.valid_moves()
                     if len(move_split) == 2:
                         x, y = move_split
                         action = state._board.n * x + y if x != -1 else state._board.n ** 2
                         if valid[action]:
                             message='Move accepted.'
                             print(message)
-                            self.send_board_state(conn, state, message)
-                            conn.close()
+                            self.send_board_state(state, message)
                             return action
                         else:
                             error='Invalid move entered.'
                             print(error)
-                            self.send_board_state(conn, state, error)
+                            self.send_board_state(state, error)
                             break
                     else:
                         error='Unexpected move format. Expected: x_y'
                         print(error)
-                        self.send_board_state(conn, state, error)
+                        self.send_board_state(state, error)
                         break
             except Exception as e:
                 print(f"Error: {e}")
                 traceback.print_exc()
-            finally:
-                conn.close()
